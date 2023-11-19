@@ -14,10 +14,47 @@ const canvas = document.querySelector('canvas.webgl')
 // Scene
 const scene = new THREE.Scene()
 
+// Fog
+const fog = new THREE.Fog('#262837', 1, 15)
+scene.fog = fog
+
 /**
  * Textures
  */
 const textureLoader = new THREE.TextureLoader()
+
+const doorAlphaTexture = textureLoader.load('/textures/door/alpha.jpg')
+const doorAmbientOcclusionTexture = textureLoader.load('/textures/door/ambientOcclusion.jpg')
+const doorColorTexture = textureLoader.load('/textures/door/color.jpg')
+const doorHeightTexture = textureLoader.load('/textures/door/height.jpg')
+const doorMetalnessTexture = textureLoader.load('/textures/door/metalness.jpg')
+const doorNormalTexture = textureLoader.load('/textures/door/normal.jpg')
+const doorRoughnessTexture = textureLoader.load('/textures/door/roughness.jpg')
+
+doorAlphaTexture.colorSpace = THREE.SRGBColorSpace
+doorAmbientOcclusionTexture.colorSpace = THREE.SRGBColorSpace
+doorColorTexture.colorSpace = THREE.SRGBColorSpace
+doorHeightTexture.colorSpace = THREE.SRGBColorSpace
+doorMetalnessTexture.colorSpace = THREE.SRGBColorSpace
+// doorRoughnessTexture.colorSpace = THREE.SRGBColorSpace
+
+const bricksAmbientOcclusionTexture = textureLoader.load('/textures/bricks/ambientOcclusion.jpg')
+const bricksColorTexture = textureLoader.load('/textures/bricks/color.jpg')
+const bricksNormalTexture = textureLoader.load('/textures/bricks/normal.jpg')
+const bricksRoughnessTexture = textureLoader.load('/textures/bricks/roughness.jpg')
+
+bricksAmbientOcclusionTexture.colorSpace = THREE.SRGBColorSpace
+bricksColorTexture.colorSpace = THREE.SRGBColorSpace
+// bricksRoughnessTexture.colorSpace = THREE.SRGBColorSpace
+
+const grassAmbientOcclusionTexture = textureLoader.load('/textures/grass/ambientOcclusion.jpg')
+const grassColorTexture = textureLoader.load('/textures/grass/color.jpg')
+const grassNormalTexture = textureLoader.load('/textures/grass/normal.jpg')
+const grassRoughnessTexture = textureLoader.load('/textures/grass/roughness.jpg')
+
+grassAmbientOcclusionTexture.colorSpace = THREE.SRGBColorSpace
+grassColorTexture.colorSpace = THREE.SRGBColorSpace
+// grassRoughnessTexture.colorSpace = THREE.SRGBColorSpace
 
 /**
  * House
@@ -27,7 +64,12 @@ scene.add(house)
 
 const walls = new THREE.Mesh(
   new THREE.BoxGeometry(4, 2.5, 4),
-  new THREE.MeshStandardMaterial({ color: '#ac8e82' })
+  new THREE.MeshStandardMaterial({
+    map: bricksColorTexture,
+    aoMap: bricksAmbientOcclusionTexture,
+    normalMap: bricksNormalTexture,
+    roughnessMap: bricksRoughnessTexture
+  })
 )
 walls.position.y = 2.5 / 2
 house.add(walls)
@@ -40,7 +82,20 @@ roof.rotation.y = Math.PI * 0.25
 roof.position.y = 2.5 + 0.5
 house.add(roof)
 
-const door = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.MeshStandardMaterial({ color: 'red' }))
+const door = new THREE.Mesh(
+  new THREE.PlaneGeometry(2.2, 2.2, 100, 100),
+  new THREE.MeshStandardMaterial({
+    map: doorColorTexture,
+    transparent: true,
+    alphaMap: doorAlphaTexture,
+    aoMap: doorAmbientOcclusionTexture,
+    displacementMap: doorHeightTexture,
+    displacementScale: 0.1,
+    normalMap: doorNormalTexture,
+    metalnessMap: doorMetalnessTexture,
+    roughnessMap: doorRoughnessTexture
+  })
+)
 door.position.y = 1
 door.position.z = 2 + 0.01
 house.add(door)
@@ -97,7 +152,12 @@ for (let i = 0; i < 50; i++) {
 // Floor
 const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(20, 20),
-  new THREE.MeshStandardMaterial({ color: '#a9c388' })
+  new THREE.MeshStandardMaterial({
+    map: grassColorTexture,
+    aoMap: grassAmbientOcclusionTexture,
+    normalMap: grassNormalTexture,
+    roughnessMap: grassRoughnessTexture
+  })
 )
 floor.rotation.x = -Math.PI * 0.5
 floor.position.y = 0
@@ -107,18 +167,25 @@ scene.add(floor)
  * Lights
  */
 // Ambient light
-const ambientLight = new THREE.AmbientLight('#ffffff', 0.5)
+const ambientLight = new THREE.AmbientLight('#b9d5ff', 0.12)
 gui.add(ambientLight, 'intensity').min(0).max(1).step(0.001)
 scene.add(ambientLight)
 
 // Directional light
-const moonLight = new THREE.DirectionalLight('#ffffff', 1.5)
+const moonLight = new THREE.DirectionalLight('#b9d5ff', 0.26)
 moonLight.position.set(4, 5, -2)
 gui.add(moonLight, 'intensity').min(0).max(1).step(0.001)
 gui.add(moonLight.position, 'x').min(-5).max(5).step(0.001)
 gui.add(moonLight.position, 'y').min(-5).max(5).step(0.001)
 gui.add(moonLight.position, 'z').min(-5).max(5).step(0.001)
 scene.add(moonLight)
+
+const doorLight = new THREE.PointLight('#ff7d46', 3, 7)
+doorLight.position.set(0, 2.2, 2.7)
+gui.add(doorLight.position, 'x').min(-5).max(5).step(0.001)
+gui.add(doorLight.position, 'y').min(-5).max(5).step(0.001)
+gui.add(doorLight.position, 'z').min(-5).max(5).step(0.001)
+house.add(doorLight)
 
 /**
  * Sizes
@@ -164,6 +231,7 @@ const renderer = new THREE.WebGLRenderer({
 })
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+renderer.setClearColor('#262837')
 
 /**
  * Animate
